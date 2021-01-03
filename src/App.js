@@ -70,6 +70,11 @@ export default function App() {
     mapRef.current = map; // can access current map anywhere in the code without re-rendering
   }, []);
  
+  const panTo = React.useCallback(({lat, lng}) => {
+      mapRef.current.panTo({lat, lng});
+      mapRef.current.setZoom(14);
+    }, []); // empty array -> "no defs" -> never have to change the value of this function; common for all useCallbacks 
+
   if (loadError) return "Error loading maps"
   if (!isLoaded) return "Loading maps"
 
@@ -79,7 +84,8 @@ export default function App() {
   return (
     <div>
       <h1>Local Businesses <span role='img' aria-label='food'>🍲</span></h1>
-      <Search />
+      {/* // panTo passed as a prop to our Search component */}
+      <Search panTo={panTo}/> 
       {/* props: mapContainerStyle, zoom, center, options, onClick, onMapLoad */}
       <GoogleMap 
         mapContainerStyle={mapContainerStyle} 
@@ -122,13 +128,13 @@ export default function App() {
   );
 }
 
-function Search() {
+function Search({panTo}) { // can receive panTo prop since it was passed to Search component
   const {
     ready, 
     value, 
     suggestions: {status, data}, 
     setValue, 
-    clearSuggestion,
+    clearSuggestions,
   } = usePlacesAutocomplete({ // this is a hook
     requestOptions: {
       location: {
@@ -142,7 +148,19 @@ function Search() {
   return (
     <div className='search'>
     <Combobox 
-      onSelect={(address) => { // onSelect is a prop; will eventually receive the address that the user has selected
+     // make async function because we're going to be using promises
+      onSelect={async(address) => { // onSelect is a prop; will eventually receive the address that the user has selected
+        setValue(address, false) // use false for shouldFetchData param because we know what user selected; we don't neet to retrieve that again from the Google API
+        clearSuggestions()
+        try {
+          // have to await because this is a promise
+          const results = await getGeocode({address});
+          const {lat, lng} = await getLatLng(results[0]);
+          panTo({lat, lng})
+        } catch(error) {
+          console.log("Error!")
+        }
+
         console.log(address);
     }}
     >
