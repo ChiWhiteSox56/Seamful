@@ -7,22 +7,25 @@ import  {
 } from '@react-google-maps/api'
 import { formatRelative } from 'date-fns';
 
-// import usePlacesAutocomplete, {
-//   getGeocode,
-//   getLatLng,
-// } from 'use-places-automcomplete';
+import usePlacesAutocomplete, {
+  getGeocode,
+  getLatLng,
+} from 'use-places-autocomplete';
+
 import {
   Combobox,
   ComboboxInput, 
   ComboboxPopover,
   ComboboxList,
   CombpboxOption,
+  ComboboxOption,
 } from '@reach/combobox';
-
+import '@reach/combobox/styles.css';
 import mapStyles from './mapStyles';
 
-import '@reach/combobox/styles.css';
 import { render } from '@testing-library/react';
+
+// URL for this tutorial: https://www.youtube.com/watch?v=WZcxJGmLbSo
 
 const libraries = ['places'];
 const mapContainerStyle = {
@@ -76,6 +79,7 @@ export default function App() {
   return (
     <div>
       <h1>Local Businesses <span role='img' aria-label='food'>🍲</span></h1>
+      <Search />
       {/* props: mapContainerStyle, zoom, center, options, onClick, onMapLoad */}
       <GoogleMap 
         mapContainerStyle={mapContainerStyle} 
@@ -114,6 +118,50 @@ export default function App() {
             </InfoWindow>
           ) : null}
       </GoogleMap>
+    </div>
+  );
+}
+
+function Search() {
+  const {
+    ready, 
+    value, 
+    suggestions: {status, data}, 
+    setValue, 
+    clearSuggestion,
+  } = usePlacesAutocomplete({ // this is a hook
+    requestOptions: {
+      location: {
+        lat: () => 40.738810, // arrow function that returns lat vaue
+        lng: () => -73.878380}, // arrow function tyat returns lng value
+        radius: 10 * 1000 // wants measurement in meters, so 10kilometers * 1000 since 1000 meters = 1km
+    },
+  });
+
+  // will be returning a combobox
+  return (
+    <div className='search'>
+    <Combobox 
+      onSelect={(address) => { // onSelect is a prop; will eventually receive the address that the user has selected
+        console.log(address);
+    }}
+    >
+      {/* // display 'value' from usePlacesAutomcomplete hook above */}
+      {/* // onChange -> listen for when user makes changes; arrow function receives the event 'e' */}
+      <ComboboxInput value={value} onChange={(e) => {
+        setValue(e.target.value);
+      }}
+      disabled={!ready}
+      placeholder='Enter an address'
+      /> 
+      {/* // ComboboxPopover recieves all of the suggestions that Google Places givs us */}
+      <ComboboxPopover>
+        {/* // DECONSTRUCT an id and a suggestion that's available on each suggestion */}
+      {status === 'OK' && data.map(({id, description}) => (
+        <ComboboxOption key={id} value={description}/>
+      ))}
+      </ComboboxPopover>
+    </Combobox>
     </div>
   );
 }
