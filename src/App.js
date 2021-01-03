@@ -86,6 +86,7 @@ export default function App() {
       <h1>Local Businesses <span role='img' aria-label='food'>🍲</span></h1>
       {/* // panTo passed as a prop to our Search component */}
       <Search panTo={panTo}/> 
+      <Locate panTo={panTo}/>
       {/* props: mapContainerStyle, zoom, center, options, onClick, onMapLoad */}
       <GoogleMap 
         mapContainerStyle={mapContainerStyle} 
@@ -125,6 +126,26 @@ export default function App() {
           ) : null}
       </GoogleMap>
     </div>
+  );
+}
+
+function Locate({panTo}) {
+  return (
+  <button className='locate' onClick={() => {
+    // use browser's built-in geolocation to get current position
+    // (success, error, options) - > we're passing null for error because we're not going to handle the error (also didn't pass options)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        panTo({
+          lat: position.coords.latitude, 
+          lng: position.coords.longitude
+        });
+      },
+      () => null,
+      );
+  }}>
+    <img src='/compass.svg' alt='compass - locate me' />
+  </button>
   );
 }
 
@@ -174,10 +195,12 @@ function Search({panTo}) { // can receive panTo prop since it was passed to Sear
       /> 
       {/* // ComboboxPopover recieves all of the suggestions that Google Places givs us */}
       <ComboboxPopover>
+        <ComboboxList>
         {/* // DECONSTRUCT an id and a suggestion that's available on each suggestion */}
-      {status === 'OK' && data.map(({id, description}) => (
-        <ComboboxOption key={id} value={description}/>
-      ))}
+          {status === 'OK' && data.map(({id, description}) => (
+            <ComboboxOption key={id} value={description}/>
+          ))}
+      </ComboboxList>
       </ComboboxPopover>
     </Combobox>
     </div>
